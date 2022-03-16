@@ -1,0 +1,2 @@
+# 20daySql
+belajar sql
