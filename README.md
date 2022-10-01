@@ -1,2 +1,1 @@
-# 20daySql
-belajar sql
+### Practice Postgresql And Mysql
