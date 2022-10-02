@@ -76,3 +76,132 @@ SELECT flight_id, flight_no, departure_airport,arrival_airport,status FROM fligh
 
     SELECT *, round(range/1.69, 2) AS range_in_miles FROM aircrafts WHERE aircraft_code = 'SU9';
 ```
+
+
+#### Count
+The function returns the number of rows that matches a specified criterion.
+
+```sql
+SELECT COUNT(model) FROM aircrafts;
+
+SELECT COUNT(DISTINCT passenger_name) FROM tickets;
+```
+
+#### SUM
+The SUM() function returns the total sum of a numeric column. 
+
+```sql 
+SELECT SUM(total_amount) FROM bookings;
+```
+
+#### AVG
+The function returns the average value of a numeric column.
+```sql 
+SELECT
+```
+
+#### MIN
+The MIN() function returns the smallest value of the selected column.
+```sql
+SELECT MIN(total_amount) FROM bookings;
+```
+
+#### MAX
+The MAX() function returns the largest value of the selected column.
+```sql 
+SELECT MAX(total_amount) FROM bookings;
+```
+
+#### GROUP BY
+The statement groups rows that have the same values into summary rows
+
+```sql
+SELECT city, COUNT(*) FROM airports GROUP BY city;
+
+```
+
+#### HAVING
+The clause was added to SQL because the keyword cannot be used with aggregate functions.
+
+```sql 
+SELECT city ->> 'en', COUNT(*) FROM airports GROUP BY city HAVING COUNT(*) > 1;
+```
+
+#### TEST
+
+```sql
+SELECT AVG(total_amount) as sales FROM bookings;
+
+SELECT count(*) FROM seats WHERE aircraft_code = 'CN1';
+
+SELECT count (*) FROM seats WHERE aircraft_code = 'SU9';
+
+SELECT aircraft_code, COUNT(*) FROM seats GROUP BY aircraft_code ORDER BY COUNT;
+
+SELECT aircraft_code, fare_conditions, COUNT(*) FROM seats GROUP BY aircraft_code,fare_conditions ORDER BY aircraft_code, fare_conditions;
+
+SELECT book_date, SUM(total_amount) as sales FROM bookings GROUP BY 1 ORDER BY 2 LIMIT 1;
+
+```
+
+#### TEST Aggregation
+
+```sql
+SELECT(SELECT city ->> 'en' FROM airports WHERE airport_code = departure_airport) AS departure_city, COUNT(*) FROm flights GROUP BY(SELECT city ->> 'en' FROM airports WHERE airport_code = departure_airport) HAVING count(*) >= 50 ORDER BY COUNT DESC;
+
+SELECT f.flight_no,f.scheduled_departure :: time AS dep_time,
+f.departure_airport AS departures,f.arrival_airport AS arrivals,
+count (flight_id)AS flight_count
+FROM flights f
+WHERE f.departure_airport = 'KZN'
+AND f.scheduled_departure >= '2017-08-28' :: date
+AND f.scheduled_departure <'2017-08-29' :: date
+GROUP BY 1,2,3,4,f.scheduled_departure
+ORDER BY flight_count DESC,f.arrival_airport,f.scheduled_departure;
+```
+
+
+#### CASE
+The CASE expression goes through conditions and returns a value when the first condition is met (like an if-then-else statement).
+
+
+```sql
+SELECT DATE_PART('month', book_date) as month,SUM(total_amount) as bookings,CASE WHEN SUM(total_amount) > 6958118400.00 THEN 'the most' WHEN SUM(total_amount) < 6958118400.00 THEN 'the least' ELSE 'the medium' END booking_qt FROM bookings GROUP BY month;
+
+SELECT *, CASE WHEN age >= 50 THEN 'old' WHEN age isnull THEN 'unknown' ELSE 'young' END is_old FROM pilots;
+
+```
+#### NULL IF
+This tutorial shows you how to use PostgreSQL NULLIF function to handle null values. We will show you some examples of using the NULLIF function.
+```sql
+SELECT COUNT(*) - COUNT(NULLIF(actual_departure, null)) non_cnt_1, COUNT(*) - COUNT(NULLIF(actual_arrival, null)) non_cnt_2 FROM flights
+```
+
+#### COALESCE
+COALESCE function that returns the first non-null argument.
+
+```sql
+SELECT status, COALESCE(actual_departure, current_timestamp), COALESCE(actual_arrival, current_timestamp) FROM flights;
+```
+
+#### TEST
+
+```sql
+SELECT model, range, CASE WHEN range < 2000 THEN 'Short' WHEN range < 5000 THEN 'middle' ELSE 'Long' END AS range FROM aircrafts ORDER BY model;
+```
+
+#### TIMESTAMP EXTRACT
+
+```sql
+SELECT EXTRACT('day' FROM book_date) as day, SUM(total_amount) as sales FROM bookings GROUP BY 1 ORDER BY 2;
+
+SELECT EXTRACT('day' FROM book_date) as day, EXTRACT('month' FROM book_date) AS month, sum(total_amount) as SALES FROM bookings GROUP BY 1,2 ORDER BY 3;
+```
+
+#### DATE TRUNC
+
+```sql
+SELECT DATE_TRUNC('day', book_date) as day, COUNT(total_amount) as total_bookings FROM bookings GROUP BY DATE_TRUNC('day', book_date);
+
+SELECT DATE_PART('day', book_date) as day, DATE_PART('month', book_date) as month, SUM(total_amount) AS bookings FROM bookings GROUP BY day, month HAVING DATE_PART('month', book_date) = 6;
+```
