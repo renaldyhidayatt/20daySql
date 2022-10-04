@@ -205,3 +205,110 @@ SELECT DATE_TRUNC('day', book_date) as day, COUNT(total_amount) as total_booking
 
 SELECT DATE_PART('day', book_date) as day, DATE_PART('month', book_date) as month, SUM(total_amount) AS bookings FROM bookings GROUP BY day, month HAVING DATE_PART('month', book_date) = 6;
 ```
+
+#### INNER JOIN
+The INNER JOIN keyword selects records that have matching values in both tables.
+
+```sql
+SELECT s.seat_no, s.fare_conditions, a.model ->> 'en' AS model, flight_no,departure_airport, arrival_airport, status FROM seats s INNER JOIN aircrafts a ON s.aircraft_code = a.aircraft_code INNER JOIN flights f ON a.aircraft_code = f.aircraft_code
+```
+
+#### LEFT JOIN
+The LEFT JOIN keyword returns all records from the left table (table1), and the matching records from the right table (table2). The result is 0 records from the right side, if there is no match.
+
+```sql
+SELECT t.passenger_name, t.ticket_no, tf.fare_conditions, DATE_PART('day', book_date) AS day, DATE_PART('month', book_date) as month FROM tickets t LEFT join bookings b ON t.book_ref = b.book_ref LEFT JOIN ticket_flights tf ON t.ticket_no = tf.ticket_no WHERE fare_conditions = 'Business' ORDER BY month, day;
+
+SELECT DISTINCT t.passenger_name, t.ticket_no, tf.fare_conditions, DATE_PART('day', book_date) AS day, DATE_PART('month', book_date) as month FROM tickets t LEFT join bookings b ON t.book_ref = b.book_ref LEFT JOIN ticket_flights tf ON t.ticket_no = tf.ticket_no WHERE fare_conditions = 'Business' ORDER BY month, day;
+```
+
+#### RIGHT JOIN
+The RIGHT JOIN keyword returns all records from the right table (table2), and the matching records from the left table (table1). The result is 0 records from the left side, if there is no match.
+
+```sql
+SELECT t.passenger_name, t.ticket_no, tf.fare_conditions, DATE_PART('day', book_date) AS day, DATE_PART('month', book_date) as month FROM bookings b RIGHT JOIN tickets t ON b.book_ref = t.book_ref RIGHT JOIN ticket_flights tf ON tf.ticket_no = t.ticket_no ORDER BY month, day;
+
+SELECT DISTINCT t.passenger_name, t.ticket_no, tf.fare_conditions, DATE_PART('day', book_date) AS day, DATE_PART('month', book_date) as month FROM bookings b RIGHT JOIN tickets t ON b.book_ref = t.book_ref RIGHT JOIN ticket_flights tf ON tf.ticket_no = t.ticket_no ORDER BY month, day;
+```
+
+#### FULL OUTER
+The FULL OUTER JOIN keyword returns all records when there is a match in left (table1) or right (table2) table records.
+
+```sql
+SELECT * FROM boarding_passes b FULL JOIN flights f ON b.flight_id = f.flight_id
+```
+
+#### CROSS JOIN
+A CROSS JOIN clause allows you to produce a Cartesian Product of rows in two or more tables.
+```sql
+SELECT * FROM aircrafts CROSS JOIN airports;
+```
+
+#### UNION
+The operator combines result sets of two or more statements into a single result set.
+
+```sql
+SELECT * FROM aircrafts WHERE range > 4500 UNION SELECT * FROM aircrafts WHERE range < 7500
+
+SELECT * FROM aircrafts WHERE range > 4500 UNION ALL SELECT * FROM aircrafts WHERE range < 7500
+
+SELECT * FROM aircrafts WHERE range > 4500 INTERSECT SELECT * FROM aircrafts WHERE range < 7500;
+
+SELECT * FROM aircrafts WHERE range > 4500 EXCEPT SELECT * FROM aircrafts WHERE range < 7500
+```
+
+#### SELF JOIN
+A self-join is a regular join that joins a table to itself. In practice, you typically use a self-join to query hierarchical data or to compare rows within the same table.
+
+#### USING
+```sql
+SELECT t.ticket_no, t.passenger_name,  t.contact_data, b.total_amount, b.book_date FROM tickets t JOIN bookings b USING(book_ref)
+```
+
+#### NATURAL JOIN
+A natural join is a join that creates an implicit join based on the same column names in the joined tables.
+
+```sql 
+SELECT * FROM aircrafts a NATURAL JOIN seats s
+```
+
+#### TEST
+
+```sql
+-- Who traveled from Moscow (SVO) to Novosibirsk (OVB) on seat 1A yesterday, and when was the ticket booked?
+
+SELECT t.passenger_name, b.book_date FROM bookings b JOIN tickets t ON t.book_ref = b.book_ref JOIN boarding_passes bp ON bp.ticket_no = t.ticket_no JOIN flights f ON f.flight_id = bp.flight_id WHERE f.departure_airport = 'SVO' AND f.arrival_airport = 'OVB' AND f.scheduled_departure::date = public.now()::date - INTERVAL '2 day' AND bp.seat_no = '1A';
+
+-- Find the most disciplined passengers who checked in first for all their flights. Take into account only those passengers who took at least two flights ?
+SELECT t.passenger_name, t.ticket_no FROM tickets t JOIN boarding_passes bp ON bp.ticket_no = t.ticket_no GROUP BY t.passenger_name, t.ticket_no HAVING max(bp.boarding_no) = 1 AND count(*) > 1
+
+-- Calculate the number of passengers and number of flights departing from one airport (SVO) during each hour on the indicated day 2017-08-02 ?
+
+SELECT DATE_PART('hour', f.scheduled_departure) "hour", count(ticket_no) passengers_cnt, COUNT(DISTINCT f.flight_id) flights_cnt FROM flights f JOIN ticket_flights t ON f.flight_id = t.flight_id WHERE f.departure_airport = 'SVO' AND f.scheduled_departure >= '2017-08-02'::date AND f.scheduled_departure < '2017-08-03'::date GROUP BY DATE_PART('hour', f.scheduled_departure);
+
+```
+
+#### TEST JOIN
+
+```sql
+-- Use SQL  joins to  return unique city name, flight_no, airport and timezone?
+SELECT DISTINCT a.city, f.flight_no, a.airport_name, AS airport, a.timezone FROM flights f JOIN airports_eng a ON a.airport_code = f.departure_airport;
+
+```
+
+#### TEST SUBQUERY
+
+```sql
+-- How many people can be included into a single booking according to the available data?
+SELECT tt.bookings_no,count(*)passengers_no
+FROM (SELECT t.book_ref, count(*) bookings_no FROM tickets t GROUP BY t.book_ref) tt
+GROUP BY tt.bookings_no
+ORDER BY tt.bookings_no;
+
+
+-- Which combinations of first and last names occur most often? What is the ratio of the passengers with such names to the total number of passengers?
+SELECT passenger_name, round( 100.0 * cnt / sum(cnt) OVER (), 2) AS percent
+FROM (SELECT passenger_name, count(*) cnt  FROM tickets GROUP BY passenger_name) sub
+ORDER BY percent DESC;
+
+```
